@@ -1,0 +1,79 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import tensorflow as tf
+
+from utils import *
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.callbacks import EarlyStopping, LambdaCallback
+
+%matplotlib inline
+tf.logging.set_verbosity(tf.logging.ERROR)
+
+df = pd.read_csv('data.csv')
+df.head()
+
+#check for missing value across each column
+df.isna().sum()
+
+#Data normalization in pandas and ignoring first column for serial number of rows
+df = df.iloc[:,1:]
+df_norm = (df - df.mean())/df.std()
+df_norm.head()
+
+y_mean = df['price'].mean()
+y_std = df['price'].std()
+
+def convert_label_value(pred):
+    return int(pred * y_std + y_mean)
+    
+#Select Features
+x = df_norm.iloc[:,-1]
+x.head()
+
+#Select Labels
+y = df_norm.iloc[:,-1]
+y.head()
+
+#Extracting numeric values for Tensorflow
+x_arr = x.values
+y_arr = y.values
+
+#Train and Test split
+x_train, x_test, y_train, y_test = train_test_split(x_arr ,y_arr ,test_size = 0.25, random_state = 0)
+
+#Create the model
+def get_model():
+    model = Sequential([
+    Dense(10, activation = 'relu', input_shape = (6,)),
+    Dense(20 ,activation = 'relu'),
+    Dense(5, activation = 'relu'),
+    Dense(1)
+    ])
+    model.compile( optimizer = 'adam', loss = 'mse')
+    return model
+get_model().summary()
+
+#Model Training using EarlyStopping
+es_cb = EarlyStopping(monitor = 'val_loss' , patience = 5) 
+#it will monitor validation loss. So, if validation loss does not decrease for 5 epochs it will stop the training
+
+model = Sequential()
+pred_on_untrained = model.predict(x_test)
+
+#create history object which will contain/store loss, val_loss for each epoch
+history = model.fit(x_train, y_train, validation_data = (x_test, y_test), epochs = 100, callbacks = [es_cb])
+
+#Use plot_loss helper function to take a look at training and validation loss
+plot_loss(history)
+
+#predict and compare trained vs untrained model prediction and also pass ground truth(y_test)
+pred_on_trained = model.predict(x_test)
+compare_predictions(pred_on_untrained, pred_on_trained, y_test)
+
+#convert to original price range and compare
+price_untrained = [convert_label_value(y) for y in pred_on_untrained]
+price_trained = [convert_label_value(y) for y in pred_on_trained]
+price_test = [convert_label_value(y) for y in y_test]
+compare_predictions(price_untrained, price_trained, price_test)
