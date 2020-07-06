@@ -1,0 +1,106 @@
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+#tensor constant
+tf.constant([[1,2,3]])
+tf.convert_to_tensor([[1,2,3]])
+tf.convert_to_tensor([[1,2,3]],dtype=tf.float32) #to change the datatype
+tf.convert_to_tensor([[1,2,3]]).numpy() #to convert it to numpy array
+
+#tensor variables
+tf.Variable([[1,2,3]])
+v = tf.Variable(1)
+print('Initial value: ', v.numpy())
+v.assign(2)
+print('Final value: ', v.numpy())
+
+#tensor multiplication
+c = tf.convert_to_tensor(np.random.randn(2,3))
+v = tf.Variable(np.random.randn(3,1))
+print(tf.matmul(c,v))
+
+#automatic differentiation
+x = tf.Variable(2.0)
+with tf.GradientTape() as tape:
+    y = x**3
+dy_dx = tape.gradient(y,x)
+print('Gradient at x = {} is {}'.format(x.numpy(),dy_dx.numpy()))
+
+#automatic differentiation second order
+x = tf.Variable(4.0)
+
+with tf.GradientTape() as t1:
+    with tf.GradientTape() as t2:
+        y = x**3
+    dy_dx = t2.gradient(y, x)    
+d2y_dx2 = t1.gradient(dy_dx, x)
+print('2nd order gradient at x = {} is {}'.format(x.numpy(), d2y_dx2.numpy()))
+
+#watching tensors
+x = tf.constant(4.0)
+
+with tf.GradientTape() as tape:
+    tape.watch(x) #to keep track of operations done on x (constant treated as variables)
+    y = x**3
+dy_dx = tape.gradient(y,x)
+print('Gradient at x = {} is {}'.format(x.numpy(),dy_dx.numpy())) #will be printed as same as previous example
+
+#chain derivative
+x = tf.Variable(3.0)
+
+with tf.GradientTape(persistent=True) as tape: #to use the tape multiple times change persistent to True
+    y = x**3
+    z = 2*y
+dz_dx = tape.gradient(z,x)
+del tape #delete tape after using persistent tape
+print(dz_dx.numpy())
+
+#generate data for linear regression
+true_w, true_b = 7., 4.
+
+def create_batch(batch_size = 64):
+    x = np.random.randn(batch_size,1)
+    y = np.random.randn(batch_size,1) + true_w * x + true_b
+    return x,y
+x,y = create_batch()
+
+#linear regression
+iteration = 100
+lr = 0.03
+
+w_history = [] #keep track of change in w
+b_history = [] #keep track of change in b
+
+w = tf.Variable(10.0)
+b = tf.Variable(1.0)
+
+for i in range(0,iteration):
+    x_batch,y_batch = create_batch()
+    x_batch = tf.convert_to_tensor(x_batch)
+    y_batch = tf.convert_to_tensor(y_batch)
+    
+    with tf.GradientTape(persistent = True) as tape:
+        y = w*x_batch + b
+        loss = tf.reduce_mean(tf.square(y-y_batch))
+    dw = tape.gradient(loss,w)
+    db = tape.gradient(loss,b)
+    
+    w.assign_sub(lr*dw) #assign new value to w by subtracting lr*dw from w 
+    b.assign_sub(lr*db) #assign new value to b by subtracting lr*db from b
+    
+    del tape
+    
+    w_history.append(w.numpy())
+    b_history.append(b.numpy())
+    
+    if i%10 == 0: # for every 10th iteration print w and b values
+        print('Iter {}, w={}, b={}'.format(i,w.numpy(),b.numpy()))
+
+plt.plot(range(iterations),w_history,label='Learned w')
+plt.plot(range(iterations),b_history,label='Learned b')
+plt.plot(range(iterations),[true_w]*range(iterations), label='True w')
+plt.plot(range(iterations),[true_b]*range(iterations), label='True b')
+plt.legend()
+plt.show()
