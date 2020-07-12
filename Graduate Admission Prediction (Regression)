@@ -77,3 +77,84 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 
 LinearRegression_model = LinearRegression()
 LinearRegression_model.fit(X_train,y_train)
+
+accuracy_LinearRegression = LinearRegression_model.score(X_test, y_test)
+print(accuracy_LinearRegression)
+
+#train a artificial neural network
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.layers import Dense, Dropout, Activation
+from tensorflow.keras.optimizers import Adam
+
+ANN_model = keras.Sequential()
+ANN_model.add(Dense(50, input_dim = 7))
+ANN_model.add(Activation('relu'))
+
+ANN_model.add(Dense(150)
+ANN_model.add(Activation('relu'))
+ANN_model.add(Dropout(0.5))
+
+ANN_model.add(Dense(150)
+ANN_model.add(Activation('relu'))
+ANN_model.add(Dropout(0.5))
+
+ANN_model.add(Dense(50)
+ANN_model.add(Activation('linear'))
+ANN_model.add(Dense(1)
+
+ANN_model.compile(optimizer='adam',loss='mse')
+
+ANN_model.summary()
+
+epochs_hist = ANN_model.fit(X_train,y_train,epoch = 200,batch_size = 20,validation_split = 0.2)
+result = ANN_model.evaluate(X_test,y_test)
+accuracy_ANN = 1 - result
+print('Accuracy: {}'.format(accuracy_ANN))
+
+epochs_hist.history.keys() #to see what are the parameters like loss, val_loss
+
+plt.plot(epochs_hist.history['loss'])
+plt.xlabel('Epoch')
+plt.ylabel('Training Loss')
+plt.title('Model Loss progress during training')
+plt.legend(['Training Loss'])
+
+#train a decision tree and random forest
+from sklearn.tree import DecisionTreeRegressor
+DecisionTree_model = DecisionTreeRegressor()
+DecisionTree_model.fit(X_train,y_train)
+
+accuracy_DecisionTree = DecisionTree_model.score(X_test,y_test)
+print(accuracy_DecisionTree)
+
+from sklearn.ensemble import RandomForestRegressor
+RandomForest_model = RandomForestRegressor(n_estimators = 100, max_depth = 10)
+RandomForest_model.fit(X_train,y_train)
+
+accuracy_RandomForest = RandomForest_model.score(X_test,y_test)
+print(accuracy_RandomForest)
+
+
+y_predict = LinearRegression_model.predict(X_test)
+plt.plot(y_test,y_predict,'^',color='r')
+
+#transform y_predict, y_test to original scale
+y_predict_orig = scaler_y.inverse_transform(y_predict)
+y_test_orig = scaler_y.inverse_transform(y_test)
+plt.plot(y_test_orig, y_predict_orig, '^', color = 'r')
+
+k = X_test.shape[1] #number of independent variables
+n = len(X_test) #number of samples
+print(n)
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from math import sqrt
+
+RMSE = float(format(np.sqrt(mean_squared_error(y_test_orig, y_predict_orig)) ,'.3f'))
+MSE = mean_squared_error(y_test_orig, y_predict_orig)
+MAE = mean_absolute_error(y_test_orig, y_predict_orig)
+r2 = r2_score(y_test_orig, y_predict_orig)
+adj_r2 = 1 - (1-r2)*(n-1)/(n-k-1)
+
+print('RMSE =',RMSE,'\nMSE =',MSE,'\nMAE =',MAE,'\nR2 =',r2,'\nAdjusted R2 =',adj_r2)
