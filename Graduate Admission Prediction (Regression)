@@ -1,0 +1,79 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from jupyterthemes import jtplot
+
+'''
+line below is used for first import the theme 'monokai' and 
+it will make xlabel and ylabel much more visible for dark theme of notebook
+'''
+jtplot.style(theme='monokai', context='notebook', ticks=True, grid=False)
+
+admission_df = pd.read_csv('Admission_Predict.csv')
+admission_df.head()
+
+#drop the first column i.e. serial number
+admission_df.drop('Serial No.', axis=1, inplace = True)
+
+#check for null values
+#is_null() will check all the values and return dataframe with True or False vales
+#sum() will add up True values for each column and return the summed up values
+admission_df.is_null().sum()
+
+#check the dataframe information gives column names with non-null values and data type for each column
+admission_df.info()
+
+#statistical summary of dataframe
+admission_df.describe()
+
+#group data by university rating and calculate the mean for all columns values for each rating
+df_university = admission_df.groupby('University Rating').mean()
+print(df_university)
+
+#plot the histogram
+admission_df.hist(bins = 30, figsize = (20,20), color = 'r')
+
+#pairplot with seaborn
+sns.pairplot(admission_df)
+
+#plot the correlation matrix with heatmap
+corr_matrix = admission_df.corr()
+plt.figure(figsize = (12,12))
+sns.heatmap(corr_matrix,annot=True)
+plt.show()
+
+#take a look at dataframe
+admission_df.columns
+
+#create X,y 
+X = admission_df.drop(columns=['Chance of Admit'])
+y = admission_df['Chance of Admit']
+
+#take a look at shape of X and y
+print(X.shape)
+print(y.shape)
+
+#convert X and y to numpy array
+X = np.array(X)
+y = np.array(y)
+
+#change the shape of y from (500,) to (500,1)
+y = y.reshape(-1,1)
+print(y.shape)
+
+#scale the data before training
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+scaler_x = StandardScaler()
+X = scaler_x.fit_transform(X)
+scaler_y = StandardScaler()
+y = scaler_y.fit_transform(y)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.15) 
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, accuracy_score
+
+LinearRegression_model = LinearRegression()
+LinearRegression_model.fit(X_train,y_train)
